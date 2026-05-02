@@ -1,4 +1,3 @@
-import StyleScratchpad from '../src/StyleScratchpadControl.js';
 import StyleScratchpad from "https://cdn.jsdelivr.net/gh/tjmsy/maplibre-gl-style-scratchpad/src/StyleScratchpadControl.js";
 
 const map = new maplibregl.Map({
