@@ -1,4 +1,4 @@
-import StyleScratchpad from "https://cdn.jsdelivr.net/gh/tjmsy/maplibre-gl-style-scratchpad/src/StyleScratchpadControl.js";
+import StyleScratchpadControl from "https://cdn.jsdelivr.net/gh/tjmsy/maplibre-gl-style-scratchpad/src/StyleScratchpadControl.js";
 
 const map = new maplibregl.Map({
   container: 'map',
@@ -7,4 +7,4 @@ const map = new maplibregl.Map({
   zoom: 1,
   hash: true,
 });
-map.addControl(new StyleScratchpad(), 'top-left');
+map.addControl(new StyleScratchpadControl(), 'top-left');
