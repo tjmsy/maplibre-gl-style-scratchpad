@@ -18,8 +18,6 @@ class StyleScratchpadControl {
     this.toolbar = null;
     this.textarea = null;
     this.toggleButton = null;
-    this.okButton = null;
-    this.clearButton = null;
 
     // drag state
     this.startY = 0;
@@ -35,6 +33,7 @@ class StyleScratchpadControl {
     this._onLoadFileChange = this._onLoadFileChange.bind(this);
     this._onSaveClick = this._onSaveClick.bind(this);
     this._onApplyClick = this._onApplyClick.bind(this);
+    this._onRefreshClick = this._onRefreshClick.bind(this);
   }
 
   // -------------------------
@@ -115,6 +114,7 @@ class StyleScratchpadControl {
     this.loadInput.addEventListener("change", this._onLoadFileChange);
     this.saveButton.addEventListener("click", this._onSaveClick);
     this.applyButton.addEventListener("click", this._onApplyClick);
+    this.refreshButton.addEventListener("click", this._onRefreshClick);
     this.handle.addEventListener("mousedown", this._onDragStart);
   }
 
@@ -124,6 +124,7 @@ class StyleScratchpadControl {
     this.loadInput?.removeEventListener("change", this._onLoadFileChange);
     this.saveButton?.removeEventListener("click", this._onSaveClick);
     this.applyButton?.removeEventListener("click", this._onApplyClick);
+    this.refreshButton?.removeEventListener("click", this._onRefreshClick);
     this.handle?.removeEventListener("mousedown", this._onDragStart);
 
     document.removeEventListener("mousemove", this._onDragMove);
@@ -146,44 +147,44 @@ class StyleScratchpadControl {
     e.target.value = "";
   }
 
-async _onSaveClick() {
-  const data = this.textarea.value;
+  async _onSaveClick() {
+    const data = this.textarea.value;
 
-  // modern API
-  if (window.showSaveFilePicker) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: "style.json",
-        types: [
-          {
-            description: "JSON File",
-            accept: { "application/json": [".json"] },
-          },
-        ],
-      });
+    // modern API
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "style.json",
+          types: [
+            {
+              description: "JSON File",
+              accept: { "application/json": [".json"] },
+            },
+          ],
+        });
 
-      const writable = await handle.createWritable();
-      await writable.write(data);
-      await writable.close();
+        const writable = await handle.createWritable();
+        await writable.write(data);
+        await writable.close();
 
-      return;
-    } catch (e) {
-      console.warn("Save canceled or failed", e);
-      return;
+        return;
+      } catch (e) {
+        console.warn("Save canceled or failed", e);
+        return;
+      }
     }
+
+    // fallback
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "style.json";
+    a.click();
+
+    URL.revokeObjectURL(url);
   }
-
-  // fallback
-  const blob = new Blob([data], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "style.json";
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
 
   _onApplyClick() {
     try {
@@ -192,6 +193,10 @@ async _onSaveClick() {
     } catch (e) {
       console.error("Invalid JSON", e);
     }
+  }
+
+  _onRefreshClick() {
+    this._initializeStyleFromMap();
   }
 
   _onResize() {
@@ -289,9 +294,13 @@ async _onSaveClick() {
   }
 
   _initializeStyleFromMap() {
-    this.map.once("idle", () => {
-      this._updateTextareaFromMap();
-    });
+    const run = () => this._updateTextareaFromMap();
+
+    if (this.map.isStyleLoaded?.()) {
+      run();
+    } else {
+      this.map.once("idle", run);
+    }
   }
 
   // -------------------------
@@ -329,6 +338,7 @@ async _onSaveClick() {
     this._createLoadButton();
     this._createSaveButton();
     this._createApplyButton();
+    this._createRefreshButton();
     this._createTextarea();
   }
 
@@ -342,9 +352,13 @@ async _onSaveClick() {
     this.panel.appendChild(this.content);
 
     this.content.appendChild(this.toolbar);
-    this.toolbar.appendChild(this.loadButton);
-    this.toolbar.appendChild(this.saveButton);
-    this.toolbar.appendChild(this.applyButton);
+    this.toolbar.appendChild(this.toolbarLeft);
+    this.toolbar.appendChild(this.toolbarRight);
+    this.toolbarLeft.appendChild(this.loadButton);
+    this.toolbarLeft.appendChild(this.loadInput);
+    this.toolbarLeft.appendChild(this.saveButton);
+    this.toolbarLeft.appendChild(this.applyButton);
+    this.toolbarRight.appendChild(this.refreshButton);
     this.content.appendChild(this.textarea);
   }
 
@@ -414,6 +428,19 @@ async _onSaveClick() {
       gap: "4px",
       flex: "0 0 auto",
     });
+
+    this.toolbarLeft = document.createElement("div");
+    Object.assign(this.toolbarLeft.style, {
+      display: "flex",
+      gap: "4px",
+    });
+
+    this.toolbarRight = document.createElement("div");
+    Object.assign(this.toolbarRight.style, {
+      display: "flex",
+      gap: "4px",
+      marginLeft: "auto",
+    });
   }
 
   _createLoadButton() {
@@ -434,6 +461,11 @@ async _onSaveClick() {
   _createApplyButton() {
     this.applyButton = document.createElement("button");
     this.applyButton.textContent = "Apply";
+  }
+
+  _createRefreshButton() {
+    this.refreshButton = document.createElement("button");
+    this.refreshButton.textContent = "Refresh";
   }
 
   _createTextarea() {
