@@ -26,6 +26,7 @@ class StyleScratchpadControl {
 
     // bind
     this._onToggle = this._onToggle.bind(this);
+    this._onDocumentClick = this._onDocumentClick.bind(this);
     this._onDragStart = this._onDragStart.bind(this);
     this._onDragMove = this._onDragMove.bind(this);
     this._onDragEnd = this._onDragEnd.bind(this);
@@ -83,12 +84,16 @@ class StyleScratchpadControl {
     this._applyMapMargin(height);
     this._syncLayout();
 
-  if (!this._hasInitialized) {
-    this._initializeStyleFromMap();
-    this._hasInitialized = true;
-  }
+    if (!this._hasInitialized) {
+      this._initializeStyleFromMap();
+      this._hasInitialized = true;
+    }
 
     this.map.resize();
+
+    setTimeout(() => {
+      document.addEventListener("click", this._onDocumentClick);
+    }, 0);
   }
 
   _close() {
@@ -100,10 +105,22 @@ class StyleScratchpadControl {
     this._applyMapMargin(0);
 
     this.map.resize();
+
+    document.removeEventListener("click", this._onDocumentClick);
   }
 
   _bindMapEvents() {
     this.map.on("resize", this._onResize);
+  }
+
+  _onDocumentClick(e) {
+    if (!this.isOpen) return;
+
+    if (this.container?.contains(e.target) || this.panel?.contains(e.target)) {
+      return;
+    }
+
+    this._close();
   }
 
   _unbindMapEvents() {
@@ -135,6 +152,7 @@ class StyleScratchpadControl {
 
     document.removeEventListener("mousemove", this._onDragMove);
     document.removeEventListener("mouseup", this._onDragEnd);
+    document.removeEventListener("click", this._onDocumentClick);
   }
 
   // -------------------------
