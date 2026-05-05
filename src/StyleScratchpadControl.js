@@ -9,6 +9,7 @@ class StyleScratchpadControl {
 
     // state
     this.isOpen = false;
+    this._hasInitialized = false;
 
     // DOM refs
     this.container = null;
@@ -46,7 +47,6 @@ class StyleScratchpadControl {
     this._createUI();
     this._bindUIEvents();
     this._bindMapEvents();
-    this._initializeStyleFromMap();
 
     return this.container;
   }
@@ -82,6 +82,12 @@ class StyleScratchpadControl {
     this._applyHeight(height);
     this._applyMapMargin(height);
     this._syncLayout();
+
+  if (!this._hasInitialized) {
+    this._initializeStyleFromMap();
+    this._hasInitialized = true;
+  }
+
     this.map.resize();
   }
 
